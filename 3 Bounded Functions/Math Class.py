@@ -102,8 +102,14 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
             "if I were to draw a horizontal line at y equals half, "
             "the sine function would both cross that line and have values below and above the line."
         )
-        self.voiceover_or_play(None, text=bad_bound_description)
+
+        # Create a red label "Invalid Line"
+        invalid_label = Tex("Invalid Bound", color=RED).next_to(badBound, UP * 2).shift(LEFT * 1.7)
+
+        self.voiceover_or_play(Write(invalid_label), text=bad_bound_description)
         self.wait(2)
+
+        self.play(Unwrite(invalid_label))
 
         good_bound = 'An example of a valid upper bound would be y equals 2'
         upper_bound = DashedLine(
@@ -116,14 +122,18 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
             end=axes.c2p(6, 2),     # End at the right edge of the axes at y = 1
             color=YELLOW
         )
+        # Create a red label "Invalid Line"
+        valid_label = Tex("Valid Upper Bound", color=YELLOW).next_to(badBound, UP * 2).shift(LEFT * 1.8)
         self.voiceover_or_play(
             Succession(
                 Transform(badBound, upper_bound), 
                 Transform(badBound, upper_bound2),
+                Write(valid_label)
             ),
             text=good_bound
             )
         self.remove(upper_bound, upper_bound2)
+        self.play(Unwrite(valid_label))
 
         good_bound_description = "In this example there would never be a value for f of x that's greater than y equals 2."
         good_bound_description2 = "Something interesting to note is it doesn't have to be as low as possible to be considered a legitimate upper bound to the function."
@@ -143,6 +153,7 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
             end=axes.c2p(6, 1),     # End at the right edge of the axes at y = 1
             color=PURE_GREEN
         )
+        valid_label = Tex("Best Fitting Upper Bound", color=PURE_GREEN).next_to(best_upper_bound_green, UP * 2).shift(LEFT * 2)
         self.voiceover_or_play(Transform(badBound, best_upper_bound), text=bestUpperBound)
         self.play(Transform(badBound, best_upper_bound_green))
         self.remove(best_upper_bound, best_upper_bound_green)
@@ -165,18 +176,24 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
         self.voiceover_or_play(
             Succession(
                 Transform(bad_lower_bound, lower_bound),
-                Transform(bad_lower_bound, lower_bound_green)
+                Transform(bad_lower_bound, lower_bound_green),
+                Write(valid_label)
             ),
             text=bestLowerBound)
         self.remove(lower_bound_green, lower_bound)
+        self.play(Unwrite(valid_label))
 
         #sine_label = MathTex("f(x) = \\sin(x)", color=BLUE).next_to(axes, DOWN * 1.5)
         bound_text = MathTex(r"-1 \leq \sin(x) \leq 1", color=BLUE).next_to(axes, DOWN * 1.5)
         bound_description = "One would say the function is bounded between negative one and one."
-        self.voiceover_or_play(Transform(sine_label, bound_text), text=bound_description)
+        self.voiceover_or_play(
+            Succession(
+                Transform(sine_label, bound_text), 
+                Indicate(sine_label)
+            ),
+            text=bound_description)
         self.remove(bound_text)
         self.wait(2)
-        
 
         # Prepare linear function
         linear_curve = axes.plot(lambda x: x/2, color=BLUE, x_range=[-6, 6])
@@ -417,6 +434,8 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
 
         bye = "Thank you for watching! I hope this video helped clear up some of the confusion around bounded functions, maxima, and suprema. If you found it helpful, feel free to like, share, and subscribe for more insights into mathematical concepts. See you in the next one!"
         self.voiceover_or_play(None, text=bye)
+
+        self.wait(2)
 
     def voiceover_or_play(self, animation, text=""):
         """
