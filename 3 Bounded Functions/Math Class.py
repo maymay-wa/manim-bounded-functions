@@ -20,7 +20,7 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
             service = GTTSService(lang="en", tld="com")
         if INCLUDE_NARRATION:
             self.set_speech_service(service)
-            self.add_sound("Zeta.mp3", gain=-12)
+            self.add_sound("Zeta.mp3", gain=-9)
 
         if INTRO:
             # --- Introduction ---
@@ -32,7 +32,7 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
             title = Text(intro_text, font_size=50, color=BLUE)
             self.voiceover_or_play(Write(title), text=intro_text2)
             self.wait(1)
-            self.play(FadeOut(title))
+            self.play(Uncreate(title))
 
             intro_description = "In this video, we are going to figure out what it means for a function to be bounded."
             intro_description2 = "and how to determine if a tricky one is bounded or not."
@@ -44,7 +44,7 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
             self.voiceover_or_play(None, text=intro_description2)
             #self.wait(1)
             #self.voiceover_or_play(None, text=intro_description3)
-            self.play(FadeOut(title))
+            self.play(Uncreate(title))
 
         if DRAW_SIN:
             # --- Section 1: What Is a Bounded Function? ---
@@ -187,9 +187,9 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
         # Animate transformation
         self.voiceover_or_play(
             Succession(
-                FadeOut(heading),
-                FadeOut(badBound),
-                FadeOut(bad_lower_bound),
+                Uncreate(heading),
+                Uncreate(badBound),
+                Uncreate(bad_lower_bound),
                 Transform(axes, axes_full_size),
                 Transform(sine_curve, linear_curve),
                 Transform(sine_label, linear_label)
@@ -214,7 +214,6 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
             color=RED
         )
 
-
         unbounded_description = "In this case it's clear that any horizontal line we chose would be crossed by the function, and have an infinite number of points above and below the bound"
         self.voiceover_or_play(
             Succession(
@@ -224,61 +223,200 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
             ),
             text=unbounded_description
         )
-        self.remove(badBound, badBound2, badBound3)
+        self.remove(badBound2, badBound3)
+        self.play(Uncreate(badBound))
         self.wait(1)
 
         # Clean up before next section
         self.play(
             Succession(
-                FadeOut(linear_curve),
-                FadeOut(sine_curve),
-                FadeOut(axes)
+                Uncreate(sine_label),
+                Uncreate(linear_curve),
+                Uncreate(sine_curve),
+                Uncreate(axes)
             )
         )
 
         # --- Section 2: Bounds, Maximum, and Supremum ---
-        new_heading_text = "Bounds, Maximum, and Supremum"
-        new_heading = Text(new_heading_text, font_size=40).to_edge(UP)
+        max_description = "Let's define some helpful terms to choose where the closest fitting boundary should go."
+        max_description2 = 'To do this we will use the maximum and the supremum.'
+        self.voiceover_or_play(None, text=max_description)
+        new_heading_text = "Maximum vs Supremum"
+        new_heading = Text(new_heading_text, font_size=40)
         self.voiceover_or_play(
-            ReplacementTransform(heading, new_heading),
-            text=new_heading_text
+            Create(new_heading),
+            text=max_description2
         )
 
+        max_description2 = "what even is the difference between the two? they both sound like the highest point of a function."
+        self.voiceover_or_play(Uncreate(new_heading), text=max_description2)
+
         # Plot bounded parabola
-        parabola_description = "This parabola is bounded with a maximum value at four."
         parabola_axes = Axes(
             x_range=[-3, 3, 1], y_range=[-1, 5, 1],
             axis_config={"include_tip": False}
         ).add_coordinates()
+
         parabola_curve = parabola_axes.plot(lambda x: -x**2 + 4, color=BLUE, x_range=[-2, 2])
         parabola_label = MathTex("f(x) = -x^2 + 4", color=BLUE).next_to(parabola_axes, DOWN)
 
+        parabola_description = "Let's give a parabola as an example."
         self.voiceover_or_play(
-            AnimationGroup(
+            Succession(
                 Create(parabola_axes),
-                Create(parabola_curve),
                 Write(parabola_label),
-                lag_ratio=0.1
+                Create(parabola_curve)
             ),
             text=parabola_description
         )
+        self.wait(1)
 
         # Highlight maximum
         max_point = Dot(parabola_axes.c2p(0, 4), color=RED)
-        max_label = MathTex("\\text{Maximum: } 4", color=RED).next_to(max_point, UP)
+        max_label = MathTex("\\text{Maximum} = 4", color=RED).next_to(max_point, UP + RIGHT)
 
         max_description = "The maximum point of the parabola is at y equals four."
         self.voiceover_or_play(
-            AnimationGroup(
+            Succession(
                 Create(max_point),
-                Write(max_label),
-                lag_ratio=0.1
+                Write(max_label)
             ),
             text=max_description
         )
         self.wait(1)
 
-        # Continue with further scenes as needed
+        supremum_label = MathTex("\\text{Supremum} = 4", color=RED).next_to(max_point, UP + RIGHT)
+        max_description = "In a case where there is a defined maximum then that point is also called the supremum."
+        self.voiceover_or_play(
+                Transform(max_label, supremum_label), text=max_description)
+        self.wait(1)
+        self.remove(supremum_label)
+
+        # Highlighting the supremum on the plot with a green line
+        supremum_line = DashedLine(
+            start=parabola_axes.c2p(-3, 4),    # Start at the left-most point of the plot
+            end=parabola_axes.c2p(3, 4),       # End at the right-most point of the plot
+            color=GREEN                     # Green line to represent the supremum
+        )
+
+        # Add the supremum line and label to the scene
+        supremum_description4 = "Here, the closes fitting upper bound is clearly the same as the maximum."
+        self.voiceover_or_play(
+            Create(supremum_line), 
+            text=supremum_description4
+        )
+        self.wait(2)
+
+        supremum_description = "But cases do exist where the numbers converge on a maximum point without ever quite reaching it."
+        self.voiceover_or_play(
+            Succession(
+                Uncreate(supremum_line),
+                Uncreate(max_label),
+                Uncreate(max_point)
+                ),
+            text=supremum_description
+        )
+        self.wait(1)
+
+        # Plot bounded limit
+        limit_axes = Axes(
+            x_range=[-1, 50, 5], y_range=[-1, 5, 1],
+            axis_config={"include_tip": False}
+        ).add_coordinates()
+
+        limit_curve = limit_axes.plot(lambda x: -1/x + 4 if x != 0 else 0, color=BLUE, x_range=[0.18, 50])
+        limit_label = MathTex(r"f : \mathbb{R}^+ \to \mathbb{R}, \quad f(x) = -\frac{1}{x} + 4", color=WHITE).to_edge(UP)
+
+        supremum_description2 = 'For example, in the given function it clearly stops growing at y equals four.'
+        self.voiceover_or_play(
+            Succession(
+                Uncreate(parabola_curve),
+                Uncreate(parabola_label),
+                FadeOut(parabola_axes),
+                FadeIn(limit_axes),
+                Create(limit_curve),
+                Create(limit_label)
+                ),
+            text=supremum_description2
+        )
+        self.wait(1)
+
+        supremum_description3 = (
+            "But at the same time, this function has no maximum ."
+        )
+        self.voiceover_or_play(None, text=supremum_description3)
+
+        closer_description = "If we take an x of 45, the value of y gets close to four, "
+        example_point1 = Dot(limit_axes.c2p(45, -1/45 + 4), color=YELLOW)
+        example_label1 = MathTex("f(45) \\approx 3.99", color=YELLOW).next_to(example_point1, LEFT + DOWN)
+        self.voiceover_or_play(
+            Succession(
+                Create(example_point1),
+                Write(example_label1)
+            ),
+            text = closer_description
+        )
+        self.wait(1)
+
+        closer_description = "But for 46, y gets even closer to 4 "
+        example_point2 = Dot(limit_axes.c2p(46, -1/46 + 4), color=GREEN)
+        example_label2 = MathTex("f(46) \\approx 3.999", color=GREEN).next_to(example_point2, LEFT + DOWN * 3.5)
+        self.voiceover_or_play(
+            Succession(
+                Create(example_point2),
+                Write(example_label2)
+            ),
+            text=closer_description
+        )
+        self.wait(1)
+
+        general_description = (
+            "This is true For any value of x we choose, that's why this function has no maximum"
+        )
+        self.voiceover_or_play(
+            Succession(
+                Uncreate(example_label1),
+                Uncreate(example_label2),
+                Uncreate(example_point1),
+                Uncreate(example_point2)
+            ),
+            text=general_description
+        )
+        self.wait(1)
+
+        # Highlighting the supremum on the plot
+        supremum_line = DashedLine(
+            start=limit_axes.c2p(0, 4),  # Start at the left-most point of the plot
+            end=limit_axes.c2p(50, 4),   # End at the right-most point of the plot
+            color=GREEN
+        )
+        supremum_label = MathTex(r"\text{Supremum} = 4", color=GREEN).next_to(supremum_line, DOWN)
+
+        supremum_description4 = (
+            "In the simplest of terms, the supremum is the highest value that the function approaches."
+        )
+        self.voiceover_or_play(
+            Succession(
+                Create(supremum_line),
+                Write(supremum_label)
+            ),
+            text=supremum_description4
+        )
+        self.wait(1)
+
+        # Clean up and transition
+        self.play(
+            Succession(
+                Uncreate(supremum_line),
+                Uncreate(supremum_label),
+                Uncreate(limit_label),
+                Uncreate(limit_curve),
+                Uncreate(limit_axes)
+            )
+        )
+
+        bye = "Thank you for watching! I hope this video helped clear up some of the confusion around bounded functions, maxima, and suprema. If you found it helpful, feel free to like, share, and subscribe for more insights into mathematical concepts. See you in the next one!"
+        self.voiceover_or_play(None, text=bye)
 
     def voiceover_or_play(self, animation, text=""):
         """
