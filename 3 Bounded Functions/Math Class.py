@@ -2,11 +2,12 @@ from manim import *
 from manim_voiceover import VoiceoverScene
 from manim_voiceover.services.gtts import GTTSService
 from manim_voiceover.services.azure import AzureService
+from manim_voiceover.services.recorder import RecorderService
 import numpy as np  # For mathematical functions like np.sin
 
 # Flag to include or exclude narration
-INCLUDE_NARRATION = 0  # Set to True to include narratio
-FANCY_NARRATION = INCLUDE_NARRATION
+INCLUDE_NARRATION = 1  # Set to True to include narratio
+FANCY_NARRATION = 1
 NARRARATOR_VOICE = "en-US-SteffanNeural"
 INTRO = 1
 DRAW_SIN = True
@@ -15,12 +16,14 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
     def construct(self):            
         # Initialize the gTTS voiceover service if narration is included
         if FANCY_NARRATION:
-            service = AzureService(voice=NARRARATOR_VOICE)
+            service = RecorderService()
+            #service = AzureService(voice=NARRARATOR_VOICE)
         else:
             service = GTTSService(lang="en", tld="com")
+            
         if INCLUDE_NARRATION:
             self.set_speech_service(service)
-            self.add_sound("Zeta.mp3", gain=-9)
+            self.add_sound("Zeta.mp3", gain=-23)
 
         if INTRO:
             # --- Introduction ---
@@ -33,6 +36,20 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
             self.voiceover_or_play(Write(title), text=intro_text2)
             self.wait(1)
             self.play(Uncreate(title))
+
+        def voiceover_or_play(self, animation, text=""):
+            """
+            Helper method to conditionally include voiceover and synchronize it with animations.
+            If INCLUDE_NARRATION is True, it uses voiceover; otherwise, it plays the animation normally.
+            """
+            if INCLUDE_NARRATION:
+                with self.voiceover(text=text) as tracker:
+                    if animation is not None:
+                        self.play(animation, run_time=tracker.duration)
+            elif animation is not None:
+                self.play(animation)
+
+        
 
             intro_description = "In this video, we are going to figure out what it means for a function to be bounded."
             intro_description2 = "and how to determine if a tricky one is bounded or not."
@@ -434,17 +451,5 @@ class BoundedFunctionsWithNarration(VoiceoverScene):
 
         bye = "Thank you for watching! I hope this video helped clear up some of the confusion around bounded functions, maxima, and suprema. If you found it helpful, feel free to like, share, and subscribe for more insights into mathematical concepts. See you in the next one!"
         self.voiceover_or_play(None, text=bye)
-
         self.wait(2)
 
-    def voiceover_or_play(self, animation, text=""):
-        """
-        Helper method to conditionally include voiceover and synchronize it with animations.
-        If INCLUDE_NARRATION is True, it uses voiceover; otherwise, it plays the animation normally.
-        """
-        if INCLUDE_NARRATION:
-            with self.voiceover(text=text) as tracker:
-                if animation is not None:
-                    self.play(animation, run_time=tracker.duration)
-        elif animation is not None:
-            self.play(animation)
