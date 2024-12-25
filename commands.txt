@@ -1,0 +1,1 @@
+manim -pqh video.py LPSPart1ProblemExplanation

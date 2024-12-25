@@ -8,8 +8,8 @@ from manim_voiceover.services.recorder import RecorderService
 import numpy as np
 
 # -------- Configuration Flags -------- #
-INCLUDE_NARRATION = False      # Toggle to True/False for including voiceover
-FANCY_NARRATION = False        # If True, use AzureService or RecorderService
+INCLUDE_NARRATION = True      # Toggle to True/False for including voiceover
+FANCY_NARRATION = True        # If True, use AzureService or RecorderService
 NARRATOR_VOICE = "en-US-SteffanNeural"
 
 
@@ -53,7 +53,7 @@ def create_tile(
     )
 
     # Letter text (bold & slightly bigger for a Scrabble look)
-    txt = Text(letter, font_size=40, color=text_color, weight=BOLD)
+    txt = Text(letter, font_size=140, color=text_color, weight=BOLD, font="ScrambleMixed")
     txt.move_to(tile_base.get_center())
 
     group = VGroup(shadow, tile_base, txt)
@@ -85,14 +85,11 @@ def create_tile(
 # ---------------------------------- #
 def voiceover_or_play(scene, animation_or_animations, text="", run_time=None):
     """
-    Helper to handle voiceover + animation sync. 
-    - 'scene' is the current VoiceoverScene instance
-    - 'animation_or_animations' can be a single Animation or list of them
-    - 'text' is the narration text (optional)
-    - 'run_time' if you want to override the default run time
+    Helper for syncing voiceovers with animations. Ensures animations are not empty.
     """
+    # Convert single animation to a list
     if animation_or_animations is None:
-        animations_list = []
+        animations_list = []  # No animations
     elif isinstance(animation_or_animations, list):
         animations_list = animation_or_animations
     else:
@@ -100,20 +97,18 @@ def voiceover_or_play(scene, animation_or_animations, text="", run_time=None):
 
     if INCLUDE_NARRATION and text:
         with scene.voiceover(text=text) as tracker:
-            # If run_time not specified, we match the voiceover duration
-            if run_time is None:
-                scene.play(*animations_list, run_time=tracker.duration)
-            else:
-                scene.play(*animations_list, run_time=run_time)
+            if animations_list:
+                if run_time is None:
+                    scene.play(*animations_list, run_time=tracker.duration)
+                else:
+                    scene.play(*animations_list, run_time=run_time)
     else:
-        # No narration, just play the animations
         if animations_list:
             if run_time:
                 scene.play(*animations_list, run_time=run_time)
             else:
                 scene.play(*animations_list)
-
-
+        
 # ---------------------------------- #
 #   PART 1: Problem Explanation
 # ---------------------------------- #
@@ -133,7 +128,7 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
         if FANCY_NARRATION:
             # RecorderService for custom voice track, or switch to AzureService for TTS
             service = RecorderService()
-            # service = AzureService(voice=NARRATOR_VOICE)
+            #service = AzureService(voice=NARRATOR_VOICE)
         else:
             service = GTTSService(lang="en", tld="com")
 
@@ -143,6 +138,21 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
         #
         # (A) FIVE-PART ROADMAP
         #
+        # Background animation
+        grid = NumberPlane().fade(0.8)
+        self.play(DrawBorderThenFill(grid), run_time=3)
+        self.wait(0.1)
+        # Title text
+        title = Text("Manimator", font_size=72, gradient=(BLUE, PURPLE))
+        title.shift(UP * 0.5)
+        # Animations
+        self.play(DrawBorderThenFill(title), run_time=2.5)
+        self.play(FadeOut(grid), run_time = 1)
+        self.wait(0.5)
+        # Reverse Animation
+        self.play(Uncreate(title), run_time=1)  # Erase outline
+        self.wait(0.5)
+
         roadmap_title = Text("Longest Palindromic Substring", font_size=40).to_edge(UP)
         part_labels = VGroup(
             Text("Part 1: Problem Explanation", font_size=28),
@@ -153,13 +163,13 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
         ).arrange(DOWN, aligned_edge=LEFT).move_to(ORIGIN)
 
         # Highlight Part 1
-        part_labels[0].set_color(YELLOW)
+        part_labels[0].set_color(BLUE)
 
         voiceover_or_play(
             self,
             [Write(roadmap_title), FadeIn(part_labels)],
             text=(
-                "Welcome to our five-part series on the Longest Palindromic Substring problem. "
+                "Welcome to our five-part series on the findinf the Longest Palindromic Substring. "
                 "Here's our roadmap for the upcoming videos."
             )
         )
@@ -171,7 +181,7 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
             [FadeOut(roadmap_title)] + [FadeOut(lbl) for lbl in part_labels[1:]],
             text=(
                 "In this first video, we’ll explore the problem itself and see some examples."
-                "This is a popular question for interviews from companies like Google and Microsoft"
+                "This question is popular for interviews from companies like Google or Microsoft"
             )
 
         )
@@ -193,15 +203,16 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
         self.wait(1)
 
         definition_lines = VGroup(
-            Text("A Palindromic Substring is a substring", font_size=30),
+            Text("A Palindromic Substring is a section of a word", font_size=30),
             Text("that reads the same forwards and backwards.", font_size=30)
         ).arrange(DOWN, center=True).move_to(DOWN)
         voiceover_or_play(
             self,
             FadeIn(definition_lines),
             text=(
-                "First, let's clarify what we mean by a palindromic substring: "
-                "It reads the same forwards and backwards."
+                "First, let's clarify what we mean by a palindrome: "
+                "Its a word that reads the same forwards and backwards."
+                "For example Racecar, Tacocat, Abba"
             )
         )
         self.wait(2)
@@ -225,38 +236,47 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
             self,
             Create(tiles),
             text=(
-                  "Now, consider this 9-character string. It actually contains several palindromic substrings "
-                 "of various sizes."
-                 "We'll lay it out as fun alphabet tiles, one character per piece."
+                "Now, consider this 9-character string. It actually contains several palindromic substrings"
+                "of various sizes."
             )
         )
-        self.wait(1.5)
+        self.wait(1)
 
         # Show multiple palindromes
         # 1) "abcba" (0..4)
-        pal_abcba_rect = SurroundingRectangle(VGroup(*tiles[0:5]), buff=0.1, color=YELLOW)
+        pal_abcba_rect = SurroundingRectangle(VGroup(*tiles[0:5]), buff=0.02, color=YELLOW)
         pal_abcba_text = Text("abcba", font_size=34, color=YELLOW).next_to(tiles, DOWN*2)
         voiceover_or_play(
             self,
             [Create(pal_abcba_rect), FadeIn(pal_abcba_text)],
             text="One palindrome here is 'abcba'—the same forwards and backwards."
         )
-        self.wait(2)
+        self.wait(1)
         self.play(FadeOut(pal_abcba_rect), FadeOut(pal_abcba_text))
 
-        # 2) "bcba" (1..4)
-        pal_bcba_rect = SurroundingRectangle(VGroup(*tiles[1:5]), buff=0.1, color=GREEN)
-        pal_bcba_text = Text("bcba", font_size=34, color=GREEN).next_to(tiles, DOWN*2)
-        voiceover_or_play(
-            self,
-            [Create(pal_bcba_rect), FadeIn(pal_bcba_text)],
-            text="Inside it, there's also a shorter one, 'bcba'."
-        )
-        self.wait(2)
-        self.play(FadeOut(pal_bcba_rect), FadeOut(pal_bcba_text))
+        # # 2) "bacab" (3..7)
+        # highlight_color = LOGO_BLUE  # Define a highlight color for the letters
 
-        # 3) "bacab" (3..7)
-        pal_bacab_rect = SurroundingRectangle(VGroup(*tiles[3:8]), buff=0.1, color=ORANGE)
+        # # Create a copy of the tiles for "bacab" with the new color
+        # highlighted_tiles = VGroup()
+        # for i in range(3, 8):  # indices 3 to 7 (inclusive)
+        #     letter = tiles[i][2]  # Access the Text object within each tile
+        #     highlighted_letter = Text(letter.text, font_size=140, color=highlight_color, font="ScrambleMixed", weight=BOLD)
+        #     highlighted_letter.move_to(letter.get_center())  # Position it exactly where the original letter is
+        #     highlighted_tiles.add(highlighted_letter)
+
+        # pal_abcba_text = Text("bacab", font_size=34, color=YELLOW).next_to(tiles, DOWN*2)
+
+        # # Replace the original letters with the highlighted ones
+        # voiceover_or_play(
+        #     self,
+        #     [FadeOut(VGroup(*[tiles[i][2] for i in range(3, 8)])), FadeIn(highlighted_tiles), FadeIn(pal_abcba_text)],
+        #     text="We also find 'bacab' in the middle. It overlaps with the previous ones."
+        # )
+        # self.wait(2)
+
+        # 2) "bacab" (3..7)
+        pal_bacab_rect = SurroundingRectangle(VGroup(*tiles[3:8]), buff=0.02, color=ORANGE)
         pal_bacab_text = Text("bacab", font_size=34, color=ORANGE).next_to(tiles, DOWN*2)
         voiceover_or_play(
             self,
@@ -265,21 +285,30 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
                 "We also find 'bacab' in the middle. It overlaps with the previous ones."
             )
         )
-        self.wait(2)
+        self.wait(1)
         self.play(FadeOut(pal_bacab_rect), FadeOut(pal_bacab_text))
 
-        # 4) "bb" (7..8)
-        pal_bb_rect = SurroundingRectangle(VGroup(*tiles[7:9]), buff=0.1, color=RED)
+        # # Restore the original letters
+        # voiceover_or_play(
+        #     self,
+        #     [FadeOut(pal_abcba_text), FadeIn(VGroup(*[tiles[i][2] for i in range(3, 8)]))],
+        #     text=""
+        # )
+        self.wait(1)
+
+        # 3) "bb" (7..8)
+        pal_bb_rect = SurroundingRectangle(VGroup(*tiles[7:9]), buff=0.02, color=RED)
         pal_bb_text = Text("bb", font_size=34, color=RED).next_to(tiles, DOWN*2)
         voiceover_or_play(
             self,
             [Create(pal_bb_rect), FadeIn(pal_bb_text)],
             text="And of course, two identical letters 'bb' form the simplest palindrome."
         )
-        self.wait(2)
+        self.wait(1)
 
         self.play(FadeOut(pal_bb_rect), FadeOut(pal_bb_text), FadeOut(tiles))
         self.wait(1)
+
 
         #
         # (D) DEMO: Checking from Ends or Center
@@ -290,7 +319,7 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
             Write(checking_title),
             text=(
                 "So how do we actually check if a substring is palindromic? "
-                "It’s very much like how you’d do it in your head."
+                "The way a computer does it is really the same as how you’d do it in your head."
             )
         )
         self.wait(1)
@@ -308,44 +337,10 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
         voiceover_or_play(
             self,
             Create(short_tiles),
-            text="Take a smaller substring 'abcba'."
+            text="Take a smaller word 'abcba'. We're going to call the action we take an expansion."
         )
         self.wait(1)
 
-        # (D1) Ends Inward Approach
-        arrow_left = Arrow(start=UP*0.5, end=DOWN*0.3, buff=0, color=YELLOW)
-        arrow_left.move_to(short_tiles[0].get_center() + UP*1)
-        arrow_right = Arrow(start=UP*0.5, end=DOWN*0.3, buff=0, color=YELLOW)
-        arrow_right.move_to(short_tiles[4].get_center() + UP*1)
-
-        voiceover_or_play(
-            self,
-            [GrowArrow(arrow_left), GrowArrow(arrow_right)],
-            text="One way: compare the first and last letters. If they match, move inward."
-        )
-        self.wait(1)
-
-        # Move arrows inward
-        voiceover_or_play(
-            self,
-            [arrow_left.animate.move_to(short_tiles[1].get_center() + UP*1),
-             arrow_right.animate.move_to(short_tiles[3].get_center() + UP*1)],
-            text="Then compare the next pair inside..."
-        )
-        self.wait(1)
-
-        # Move arrows inward again
-        voiceover_or_play(
-            self,
-            [arrow_right.animate.move_to(short_tiles[2].get_center() + UP*1),
-             arrow_left.animate.move_to(short_tiles[2].get_center() + UP*1),
-            ],
-            text="...until you reach the center, confirming they're all matches."
-        )
-        self.wait(1)
-
-        # (D2) Center Outward Approach
-        self.play(FadeOut(arrow_left), FadeOut(arrow_right))
         center_arrow_left = Arrow(start=DOWN*0.5, end=UP*0.3, buff=0, color=GREEN)
         center_arrow_right = Arrow(start=DOWN*0.5, end=UP*0.3, buff=0, color=GREEN)
         center_arrow_left.move_to(short_tiles[2].get_center() + DOWN*1)
@@ -356,16 +351,16 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
             GrowArrow(center_arrow_left),
             GrowArrow(center_arrow_right)
             ],
-            text="Alternatively, start in the middle and compare letters expanding outward step by step."
+            text="We start in the middle and then we will compare letters as we go."
         )
-        self.wait(2)
+        self.wait(1)
 
         # Move arrows outward
         voiceover_or_play(
             self,
             [center_arrow_left.animate.move_to(short_tiles[1].get_center() + DOWN*1),
              center_arrow_right.animate.move_to(short_tiles[3].get_center() + DOWN*1)],
-            text="Then compare the next pair inside..."
+            text="Then expand outward..."
         )
         self.wait(1)
 
@@ -374,7 +369,7 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
             self,
             [center_arrow_left.animate.move_to(short_tiles[0].get_center() + DOWN*1),
              center_arrow_right.animate.move_to(short_tiles[4].get_center() + DOWN*1)],
-            text="Then compare the next pair inside..."
+            text="and continue until the word is over or letters don't match"
         )
         self.wait(1)
 
@@ -392,8 +387,7 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
             self,
             None,
             text=(
-                "Finally, let's talk about performance. Some methods are slower, some faster. "
-                "It matters for bigger strings."
+                "Finally, let's talk about performance. Some methods are slower, and some are faster. "
             )
         )
         self.wait(1)
@@ -403,9 +397,9 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
 
         # Define the bullet points with improved formatting
         bullet_points = VGroup(
-            Text("1. Naive: O(n^3) → that’s ~125,000 expansions", font_size=26, color=RED).scale(0.9),
-            Text("2. Center Expand: O(n^2) ~2,500 expansions", font_size=26, color=ORANGE).scale(0.9),
-            Text("3. Manacher’s: O(n) → ~50 expansions", font_size=26, color=GREEN).scale(0.9)
+            Text("1. Obvious Solution: ~125,000 expansions", font_size=26, color=RED).scale(0.9),
+            Text("2. Expand by letter: ~2,500 expansions", font_size=26, color=ORANGE).scale(0.9),
+            Text("3. Manacher’s Algorithm: ~50 expansions", font_size=26, color=GREEN).scale(0.9)
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.5).next_to(complexity_heading, DOWN, buff=1)
 
         # Fade in the heading first
@@ -414,13 +408,13 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
             FadeIn(complexity_heading),
             text="Let’s compare the time complexity of three approaches to finding the longest palindromic substring."
         )
-        self.wait(2)
+        self.wait(1)
 
         # Fade in bullet points one by one
         bullet_texts = [
-            "A naive O(n^3) solution might do around 125,000 checks for a 50-character string.",
-            "An O(n^2) approach reduces the work significantly to about 2,500 checks.",
-            "A linear-time solution, like Manacher’s Algorithm, does only around 50 expansions."
+            "A naive O(n^3) solution might do around 125,000 expansions for a 50-character string.",
+            "An O(n^2) approach reduces the work significantly to about 2,500 expansions.",
+            "And finally Manacher’s Algorithm, which solves the problem with only 50 or so expansions."
         ]
 
         for bullet, text in zip(bullet_points, bullet_texts):
@@ -429,17 +423,17 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
                 FadeIn(bullet),
                 text=text
             )
-            self.wait(2)
+            self.wait(1)
 
         # Wait after the last bullet point
-        self.wait(2)
+        self.wait(1)
 
         #
         # (F) PERSONAL NOTE WRAP-UP
         #
         personal_note = VGroup(
             Text("It's a puzzle so simple a child could solve it,", font_size=24),
-            Text("yet so ingenious we only cracked the best solution in 1975", font_size=24)
+            Text("yet so ingenious few would ever think of the optimal solution ", font_size=24)
         ).arrange(DOWN, center=True).to_edge(DOWN, buff=1.5)
 
         voiceover_or_play(
@@ -447,35 +441,26 @@ class LPSPart1ProblemExplanation(VoiceoverScene):
             Write(personal_note),
             text=(
                 "What drew me to this problem is its childlike simplicity—anyone can check a palindrome "
-                "by looking from the ends inward. Yet, there's a brilliant method discovered by Manacher—"
-                "so clever that we name the algorithm after him. "
+                "Yet, there's a brilliant method discovered by Manacher in 1975"
                 "It's a wonderful example of how a seemingly simple puzzle can inspire deep and elegant solutions."
             )
         )
-        self.wait(5)
+        self.wait(2)
 
-        final_text = Text(
-            "Next time: n^3 and n^2 solutions, then Manacher’s O(n) approach!",
-            font_size=26, color=YELLOW
-        ).to_edge(UP)
         voiceover_or_play(
             self,
-            FadeIn(final_text),
+            None,
             text=(
                 "Thank you for watching! In the next video, we'll look at the naive and expand-around-center methods "
-                "and see why they're slower, before we unlock Manacher’s Algorithm."
+                "before we unlock Manacher’s Algorithm."
             )
         )
-        self.wait(4)
+        self.wait(2)
 
         # Fade out everything
         self.play(
-            FadeOut(final_text),
             FadeOut(personal_note),
-            FadeOut(bullet_points),
-            FadeOut(definition_lines),
-            FadeOut(title_text),
-            FadeOut(part_labels[0])
+            FadeOut(bullet_points)
         )
         self.wait(1)
 
@@ -498,8 +483,8 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
         """
         # 1) Set up voiceover service
         if FANCY_NARRATION:
-            service = RecorderService()
-            # or switch to AzureService(voice=NARRATOR_VOICE)
+            #service = RecorderService()
+            service = AzureService(voice=NARRATOR_VOICE)
         else:
             service = GTTSService(lang="en", tld="com")
 
