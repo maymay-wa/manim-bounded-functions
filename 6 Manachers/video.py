@@ -8,8 +8,8 @@ from manim_voiceover.services.recorder import RecorderService
 import numpy as np
 
 # -------- Configuration Flags -------- #
-INCLUDE_NARRATION = True      # Toggle to True/False for including voiceover
-FANCY_NARRATION = True        # If True, use AzureService or RecorderService
+INCLUDE_NARRATION = False      # Toggle to True/False for including voiceover
+FANCY_NARRATION = False        # If True, use AzureService or RecorderService
 NARRATOR_VOICE = "en-US-SteffanNeural"
 
 
@@ -504,7 +504,7 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
         ).arrange(DOWN, aligned_edge=LEFT).move_to(ORIGIN)
 
         # Highlight Part 2
-        part_labels[1].set_color(YELLOW)
+        part_labels[1].set_color(BLUE)
 
         voiceover_or_play(
             self,
@@ -514,7 +514,7 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
                 "Now, let's head into Part 2: the naive O of n cubed solution, and the O of n squared approach."
             )
         )
-        self.wait(3)
+        self.wait(1)
 
         # Zoom in or fade out others
         keep_part2 = part_labels[1]
@@ -522,7 +522,7 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
         voiceover_or_play(
             self,
             [FadeOut(roadmap_title)] + [FadeOut(lbl) for lbl in others],
-            text="So let's focus on that second approach right now!"
+            text="So let's focus on those approaches now"
         )
         self.play(keep_part2.animate.to_edge(UP))
         self.wait(1)
@@ -530,7 +530,7 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
         #
         # (B) TITLE
         #
-        main_title = Text("Naive O(n^3) & Expand Around Center O(n^2)", font_size=30).next_to(keep_part2, DOWN)
+        main_title = Text("The Naive Approach", font_size=30).next_to(keep_part2, DOWN, buff=1)
         voiceover_or_play(
             self,
             Write(main_title),
@@ -542,146 +542,128 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
         )
         self.wait(2)
 
-        #
-        # (C) NAIVE O(n^3) – EXPLANATION
-        #
-        naive_label = Text("Naive O(n^3) Approach", font_size=28, color=RED).to_corner(UL)
-        self.play(FadeIn(naive_label))
-
         bullet_points_naive = VGroup(
             Text("1. Generate all substrings → O(n^2)", font_size=24),
             Text("2. Check each substring → O(n)", font_size=24),
             Text("Overall → O(n^3)", font_size=24, color=RED)
-        ).arrange(DOWN, aligned_edge=LEFT).next_to(naive_label, DOWN, buff=0.5)
+        ).arrange(DOWN, aligned_edge=LEFT).next_to(main_title, DOWN, buff=1.5)
 
         voiceover_or_play(
             self,
             FadeIn(bullet_points_naive),
             text=(
-                "First up, the naive approach. We create all possible substrings—about n squared many—"
-                "then for each one, we do a palindrome check in O(n). Multiply them together, and we get n cubed."
+                "First up, the naive approach, where we create all possible substrings"
+                "then for each one, we check if its a palindrome"
             )
         )
-        self.wait(3)
+        self.wait(1)
+        self.play(FadeOut(bullet_points_naive))
+        self.wait(1)
 
         #
         # (D) NAIVE DEMO
         #
-        sample_str = "babad"
-        example_text = Text(f"Example: '{sample_str}'", font_size=28, color=YELLOW).to_edge(LEFT)
-        voiceover_or_play(
-            self,
-            FadeIn(example_text),
-            text="Let’s see it in action with the string 'babad'."
-        )
-        self.wait(1)
-
+        sample_str = "babcd"
         # Show scrabble tiles for "babad"
-        tiles_babad = VGroup()
+        tiles = VGroup()
         for i, ch in enumerate(sample_str):
             tile = create_tile(ch, tile_width=0.9)
             tile.move_to(RIGHT * i)
-            tiles_babad.add(tile)
+            tiles.add(tile)
 
-        tiles_babad.shift(DOWN*1.5 + LEFT*(len(sample_str)-1)*0.5)
+        tiles.shift(DOWN*0.5 + LEFT*(len(sample_str)-1)*0.5)
 
         voiceover_or_play(
             self,
-            Create(tiles_babad),
-            text="We'll lay out the letters horizontally."
-        )
-        self.wait(2)
-
-        # Substring generation highlight
-        highlight_sub = SurroundingRectangle(VGroup(tiles_babad[0], tiles_babad[1]), buff=0.1, color=BLUE)
-        voiceover_or_play(
-            self,
-            Create(highlight_sub),
-            text="First, we pick a start and end index—like indices 0 to 1—for substring 'ba'."
+            Create(tiles),
+            text="Let’s see it in action with the word 'babad'."
         )
         self.wait(1)
 
-        highlight_sub_2 = SurroundingRectangle(VGroup(tiles_babad[0], tiles_babad[1], tiles_babad[2]), buff=0.1, color=GREEN)
-        self.play(ReplacementTransform(highlight_sub, highlight_sub_2))
+        # Sliding window rectangle
+        sliding_window = SurroundingRectangle(tiles[0], buff=0.05, color=YELLOW)
+        self.play(Create(sliding_window))
+
+        # Fast motion sliding window logic
+        num_tiles = len(tiles)
+        for start in range(num_tiles):
+            for end in range(start + 1, num_tiles + 1):
+                # Update the sliding window position
+                window_tiles = VGroup(*tiles[start:end])
+                new_window = SurroundingRectangle(window_tiles, buff=0.05, color=YELLOW)
+                # Dynamically adjust the height of the sliding window rectangle
+                self.play(Transform(sliding_window, new_window), run_time=1)
+
+        # Final fade out
+        self.play(FadeOut(sliding_window))
+
+        # Sliding window rectangle
+        sliding_window = SurroundingRectangle(tiles[1:4], buff=0.05, color=YELLOW)
+        
         voiceover_or_play(
             self,
-            None,
-            text="Then 0..2 for 'bab'. We keep doing this for all possible pairs of start and end indices."
+            self.play(Create(sliding_window)),
+            text="Something to notice is that this algorithm does redundant work."
         )
-        self.wait(2)
+        self.wait(1)
 
-        self.play(FadeOut(highlight_sub_2))
-
-        # Checking a substring for palindrome
-        check_label = Text("Check Substring in O(n)", font_size=24, color=RED).to_edge(UP, buff=1)
-        self.play(FadeIn(check_label))
-
-        highlight_bab = SurroundingRectangle(VGroup(tiles_babad[0], tiles_babad[1], tiles_babad[2]), buff=0.1, color=GREEN)
-        arrow_left = Arrow(UP*0.3, DOWN*0.3, buff=0, color=YELLOW).move_to(tiles_babad[0].get_center() + UP*0.6)
-        arrow_right = Arrow(UP*0.3, DOWN*0.3, buff=0, color=YELLOW).move_to(tiles_babad[2].get_center() + UP*0.6)
+        # Sliding window rectangle
+        new_sliding_window = SurroundingRectangle(tiles[0:5], buff=0.05, color=YELLOW)
+        
+        voiceover_or_play(
+            self,
+            self.play(Transform(sliding_window, new_sliding_window)),
+            text="For instance it would check both abc, and babcd even though we already knew it wasn't a palindrome from abc"
+        )
+        self.wait(1)
 
         voiceover_or_play(
             self,
-            [Create(highlight_bab), GrowArrow(arrow_left), GrowArrow(arrow_right)],
-            text="Take substring 'bab'. We check from the ends inward. If mismatch, it's not a palindrome. If all match, we succeed."
+            self.play(FadeOut(sliding_window, tiles)),
+            text="The next algorithm takes this redundancy into account"
         )
-        self.wait(2)
 
-        self.play(FadeOut(arrow_left), FadeOut(arrow_right), FadeOut(highlight_bab))
-
-        voiceover_or_play(
-            self,
-            None,
-            text="Do that for every substring. It’s straightforward but definitely O(n^3)."
-        )
-        self.wait(2)
-
-        self.play(FadeOut(check_label))
 
         #
         # (E) EXPAND AROUND CENTER (O(n^2))
         #
-        expand_label = Text("Expand Around Center (O(n^2))", font_size=28, color=GREEN).to_corner(UL)
-        self.play(ReplacementTransform(naive_label, expand_label))
+        expand_label = Text("Expand Around Center (O(n^2))", font_size=28, color=WHITE).next_to(keep_part2, DOWN, buff=1)
+        self.play(ReplacementTransform(main_title, expand_label))
         bullet_points_expand = VGroup(
-            Text("1. For each index (and gap) as 'center'", font_size=24),
-            Text("2. Expand outward while letters match", font_size=24),
-            Text("Stop on mismatch → saves time", font_size=24, color=BLUE),
-            Text("Overall → O(n^2)", font_size=24, color=GREEN)
-        ).arrange(DOWN, aligned_edge=LEFT).next_to(expand_label, DOWN, buff=0.5)
+            Text("1. Only check a letter as a center once", font_size=24, color=BLUE),
+            Text("2. Stop on mismatch to save time", font_size=24, color=GREEN)
+        ).arrange(DOWN, aligned_edge=LEFT).next_to(expand_label, DOWN, buff=1.5)
 
         voiceover_or_play(
             self,
             FadeIn(bullet_points_expand),
             text=(
                 "Now a more efficient approach: Expand Around Center. "
-                "We treat each character—and each gap between characters—as a possible center, "
+                "We treat each letter sas a possible center, "
                 "then expand outward while letters match. "
                 "If we see a mismatch, we stop immediately."
             )
         )
         self.wait(3)
 
-        # Reuse "babad"
-        expand_title_demo = Text("Again, 'babad'", font_size=24, color=YELLOW).to_edge(LEFT)
-        self.play(FadeIn(expand_title_demo))
+        self.play(FadeOut(bullet_points_expand))
 
         # We'll re-highlight the same row
         # (We'll just use the same tiles_babad; if it's not on screen, re-create it.)
-        if tiles_babad not in self.mobjects:
+        if tiles not in self.mobjects:
             # If it was removed, re-create
-            tiles_babad = VGroup()
+            tiles = VGroup()
             for i, ch in enumerate(sample_str):
                 tile = create_tile(ch, tile_width=0.9)
                 tile.move_to(RIGHT * i)
-                tiles_babad.add(tile)
-            tiles_babad.shift(DOWN*1.5 + LEFT*(len(sample_str)-1)*0.5)
-            self.play(Create(tiles_babad))
+                tiles.add(tile)
+            tiles.shift(DOWN*1.5 + LEFT*(len(sample_str)-1)*0.5)
+            self.play(Create(tiles))
 
         # Example: center at index 2
-        center_rect = SurroundingRectangle(tiles_babad[2], buff=0.1, color=GREEN)
-        arrow_left_c = Arrow(UP*0.3, DOWN*0.3, buff=0, color=YELLOW).move_to(tiles_babad[1].get_center() + UP*0.6)
-        arrow_right_c = Arrow(UP*0.3, DOWN*0.3, buff=0, color=YELLOW).move_to(tiles_babad[3].get_center() + UP*0.6)
+        center_rect = SurroundingRectangle(tiles[2], buff=0.1, color=GREEN)
+        arrow_left_c = Arrow(UP*0.3, DOWN*0.3, buff=0, color=YELLOW).move_to(tiles[1].get_center() + UP*0.6)
+        arrow_right_c = Arrow(UP*0.3, DOWN*0.3, buff=0, color=YELLOW).move_to(tiles[3].get_center() + UP*0.6)
 
         voiceover_or_play(
             self,
@@ -705,7 +687,7 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
         )
         self.wait(3)
 
-        self.play(FadeOut(tiles_babad), FadeOut(expand_title_demo), FadeOut(bullet_points_expand))
+        self.play(FadeOut(tiles), FadeOut(bullet_points_expand))
         self.wait(1)
 
         #
@@ -729,7 +711,7 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
         self.wait(3)
 
         # Cleanup
-        self.play(FadeOut(wrapup_text), FadeOut(main_title), FadeOut(keep_part2), FadeOut(example_text))
+        self.play(FadeOut(wrapup_text), FadeOut(main_title), FadeOut(keep_part2))
         self.wait(1)
 
 
