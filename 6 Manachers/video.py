@@ -8,8 +8,8 @@ from manim_voiceover.services.recorder import RecorderService
 import numpy as np
 
 # -------- Configuration Flags -------- #
-INCLUDE_NARRATION = False      # Toggle to True/False for including voiceover
-FANCY_NARRATION = False        # If True, use AzureService or RecorderService
+INCLUDE_NARRATION = True      # Toggle to True/False for including voiceover
+FANCY_NARRATION = True        # If True, use AzureService or RecorderService
 NARRATOR_VOICE = "en-US-SteffanNeural"
 
 
@@ -544,7 +544,7 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
 
         bullet_points_naive = VGroup(
             Text("1. Generate all substrings → O(n^2)", font_size=24),
-            Text("2. Check each substring → O(n)", font_size=24),
+            Text("2. Check each one → O(n)", font_size=24),
             Text("Overall → O(n^3)", font_size=24, color=RED)
         ).arrange(DOWN, aligned_edge=LEFT).next_to(main_title, DOWN, buff=1.5)
 
@@ -575,8 +575,8 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
 
         voiceover_or_play(
             self,
-            Create(tiles),
-            text="Let’s see it in action with the word 'babad'."
+            Write(tiles),
+            text="Let’s see it in action with the word 'babcd'."
         )
         self.wait(1)
 
@@ -592,42 +592,92 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
                 window_tiles = VGroup(*tiles[start:end])
                 new_window = SurroundingRectangle(window_tiles, buff=0.05, color=YELLOW)
                 # Dynamically adjust the height of the sliding window rectangle
-                self.play(Transform(sliding_window, new_window), run_time=1)
+                self.play(Transform(sliding_window, new_window), run_time=0.3)
 
         # Final fade out
-        self.play(FadeOut(sliding_window))
+        self.play(FadeOut(sliding_window, tiles, main_title))
 
-        # Sliding window rectangle
-        sliding_window = SurroundingRectangle(tiles[1:4], buff=0.05, color=YELLOW)
-        
+        # Substrings data in 3 columns
+        substrings_columns = [
+            ["b", "ba", "bab", "babc", "babcd"],
+            ["a", "ab", "abc", "abcd", ''],
+            ["b", "bc", "bcd", '', ''],
+            ["c", "cd", '', '', ''], 
+            ["d", '', '', '', '']
+        ]
+
+        # Create the table
+        table = Table(
+            substrings_columns
+        ).move_to(DOWN)
+
+        # Style the table
+        table.get_horizontal_lines().set_color(BLUE)
+        table.get_vertical_lines().set_color(BLUE)
+
+        # Add the table to the scene
         voiceover_or_play(
             self,
-            self.play(Create(sliding_window)),
+            self.play(Create(table)),
+            text="Here is a table showing every word inside of the word babcd, you can tell that there are half of n^2 squared options since they create the area of a triangle"
+        )
+        self.wait(1)
+
+        # Highlight a cell (row 1, column 1)
+        palCells = [table.get_cell((1, 1)), table.get_cell((2, 1)), table.get_cell((4, 1)),
+                    table.get_cell((5, 1)), table.get_cell((3, 1)), table.get_cell((1, 3))]
+        for cell in palCells:
+            cell.set_stroke(width=0)
+        # Add the table to the scene
+        voiceover_or_play(
+            self,
+            self.play([cell.animate.set_fill(GREEN, opacity=0.5) for cell in palCells]),
+            text="Now we will mark every word that is a palindrome and check for the longest one"
+        )
+
+        palCells2 = palCells[:-1]
+
+        voiceover_or_play(
+            self,
+            self.play([FadeOut(cell) for cell in palCells2]),
+            text="Which would clearly be bab in this case"
+        )
+        
+        self.wait(1)
+
+        self.play(FadeOut(palCells[-1]))
+        
+        palCells = [table.get_cell((2, 3)), table.get_cell((1, 5))]
+
+        voiceover_or_play(
+            self,
+            self.play([cell.animate.set_fill(YELLOW, opacity=0.5) for cell in palCells]),
             text="Something to notice is that this algorithm does redundant work."
         )
         self.wait(1)
 
-        # Sliding window rectangle
-        new_sliding_window = SurroundingRectangle(tiles[0:5], buff=0.05, color=YELLOW)
-        
         voiceover_or_play(
             self,
-            self.play(Transform(sliding_window, new_sliding_window)),
+            None,
             text="For instance it would check both abc, and babcd even though we already knew it wasn't a palindrome from abc"
         )
         self.wait(1)
 
         voiceover_or_play(
             self,
-            self.play(FadeOut(sliding_window, tiles)),
-            text="The next algorithm takes this redundancy into account"
+            self.play([FadeOut(cell) for cell in palCells]),
+            text="The heart of algorithm development is taking into account redundant steps like this, and our next algorithm will do exactly that"
         )
 
+        self.play(FadeOut(table))
+
+        self.wait(1)
 
         #
         # (E) EXPAND AROUND CENTER (O(n^2))
         #
-        expand_label = Text("Expand Around Center (O(n^2))", font_size=28, color=WHITE).next_to(keep_part2, DOWN, buff=1)
+        expand_label = Text("Expand Around Center", font_size=28, color=WHITE).next_to(keep_part2, DOWN, buff=1)
+        self.play(Write(main_title))
         self.play(ReplacementTransform(main_title, expand_label))
         bullet_points_expand = VGroup(
             Text("1. Only check a letter as a center once", font_size=24, color=BLUE),
@@ -639,43 +689,74 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
             FadeIn(bullet_points_expand),
             text=(
                 "Now a more efficient approach: Expand Around Center. "
-                "We treat each letter sas a possible center, "
-                "then expand outward while letters match. "
+                "We treat each letter as a possible center, "
+                "then we expand outward while letters match. "
                 "If we see a mismatch, we stop immediately."
             )
         )
         self.wait(3)
 
         self.play(FadeOut(bullet_points_expand))
-
+        
         # We'll re-highlight the same row
-        # (We'll just use the same tiles_babad; if it's not on screen, re-create it.)
-        if tiles not in self.mobjects:
-            # If it was removed, re-create
-            tiles = VGroup()
-            for i, ch in enumerate(sample_str):
-                tile = create_tile(ch, tile_width=0.9)
-                tile.move_to(RIGHT * i)
-                tiles.add(tile)
-            tiles.shift(DOWN*1.5 + LEFT*(len(sample_str)-1)*0.5)
-            self.play(Create(tiles))
+        tiles = VGroup()
+        tile_width=0.9
+        for i, ch in enumerate(sample_str):
+            tile = create_tile(ch, tile_width=0.9)
+            tile.move_to(RIGHT * i)
+            tiles.add(tile)
+        tiles.shift(DOWN*1.5 + LEFT*(len(sample_str)-1)*0.5)
+        self.play(Write(tiles))
 
-        # Example: center at index 2
-        center_rect = SurroundingRectangle(tiles[2], buff=0.1, color=GREEN)
-        arrow_left_c = Arrow(UP*0.3, DOWN*0.3, buff=0, color=YELLOW).move_to(tiles[1].get_center() + UP*0.6)
-        arrow_right_c = Arrow(UP*0.3, DOWN*0.3, buff=0, color=YELLOW).move_to(tiles[3].get_center() + UP*0.6)
+        # We’ll demonstrate expansions for each letter-center:
+        for center_index in range(len(sample_str)):
+            # 1) Highlight the center tile
+            center_rect = SurroundingRectangle(tiles[center_index], buff=0, color=GREEN)
+            self.play(Create(center_rect))
+            arrow_left = Arrow(
+                    start=tiles[center_index].get_top() + UP,
+                    end=tiles[center_index].get_top(),
+                    buff=0,
+                    color=GREEN
+                )
+            arrow_right = Arrow(
+                    start=tiles[center_index].get_top() + UP,
+                    end=tiles[center_index].get_top(),
+                    buff=0,
+                    color=GREEN
+                )
+            self.play(GrowArrow(arrow_left), GrowArrow(arrow_right))
+            left_idx = center_index
+            right_idx = center_index
+            while True:
+                self.wait(0.1)
+                if left_idx >= 0 and right_idx < len(sample_str) and sample_str[left_idx] == sample_str[right_idx]:
+                    self.play(
+                        arrow_left.animate.shift(LEFT),
+                        arrow_right.animate.shift(RIGHT)
+                    )
+                else:
+                    if left_idx < 0 or right_idx == len(sample_str):
+                        if left_idx < 0:
+                            self.play(arrow_left.animate.set_color(RED))
+                        if right_idx == len(sample_str):
+                            self.play(arrow_right.animate.set_color(RED))
+                    elif sample_str[left_idx] != sample_str[right_idx]:
+                        self.play(arrow_left.animate.set_color(RED), arrow_right.animate.set_color(RED))
+                    # Fade out these red arrows
+                    self.play(FadeOut(arrow_left), FadeOut(arrow_right))
+                    break
+                # Move one step outward
+                left_idx -= 1
+                right_idx += 1
 
-        voiceover_or_play(
-            self,
-            [Create(center_rect), GrowArrow(arrow_left_c), GrowArrow(arrow_right_c)],
-            text=(
-                "Pick index 2 (the middle 'b'). Check one step left and one step right. "
-                "If they match, expand further; if they don’t, you stop."
-            )
-        )
-        self.wait(3)
+            # Cleanup the center rectangle after we finish expanding this center
+            self.play(FadeOut(center_rect))
 
-        self.play(FadeOut(arrow_left_c), FadeOut(arrow_right_c), FadeOut(center_rect))
+
+        self.wait(1)
+        self.play(FadeOut(tiles))
+        self.wait()        
 
         voiceover_or_play(
             self,
@@ -685,19 +766,16 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
                 "we avoid re-checking all those inner letters, dropping complexity to O(n^2)."
             )
         )
-        self.wait(3)
-
-        self.play(FadeOut(tiles), FadeOut(bullet_points_expand))
         self.wait(1)
 
         #
         # (F) WRAP-UP
         #
         wrapup_text = Text(
-            "Naive: O(n^3) vs. Expand Around Center: O(n^2). Next: an O(n) approach!",
+            "Algorithms are all about leveraging information we know, so we don't repeat any work",
             font_size=24,
-            color=YELLOW
-        ).to_edge(DOWN)
+            color=BLUE
+        )
 
         voiceover_or_play(
             self,
@@ -705,10 +783,11 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
             text=(
                 "So there you have it: the naive method is easy but slow at O(n^3), "
                 "while expanding around the center is more clever, at O(n^2). "
-                "Next time, we'll see if we can do even better with an O(n) algorithm—Manacher’s!"
+                "Next time, we'll see how we can do even better with an algorithm that runs in linear time"
+                "Manacher’s algorithm!"
             )
         )
-        self.wait(3)
+        self.wait(1)
 
         # Cleanup
         self.play(FadeOut(wrapup_text), FadeOut(main_title), FadeOut(keep_part2))
