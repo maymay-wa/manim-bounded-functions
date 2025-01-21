@@ -483,8 +483,8 @@ class LPSPart2NaiveExpandSolutions(VoiceoverScene):
         """
         # 1) Set up voiceover service
         if FANCY_NARRATION:
-            #service = RecorderService()
-            service = AzureService(voice=NARRATOR_VOICE)
+            service = RecorderService()
+            #service = AzureService(voice=NARRATOR_VOICE)
         else:
             service = GTTSService(lang="en", tld="com")
 

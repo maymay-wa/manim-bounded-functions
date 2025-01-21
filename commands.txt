@@ -1,3 +1,4 @@
 cd "/Users/mayerunterberg/Documents/Python/Animations/6 Manachers/"
 manim -pqh video.py LPSPart1ProblemExplanation
+manim -pqh video.py LPSPart2NaiveExpandSolutions
 git add . && git commit -m "updated files" && git push
