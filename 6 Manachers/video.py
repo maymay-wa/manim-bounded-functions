@@ -8,8 +8,8 @@ from manim_voiceover.services.recorder import RecorderService
 import numpy as np
 
 # -------- Configuration Flags -------- #
-INCLUDE_NARRATION = True      # Toggle to True/False for including voiceover
-FANCY_NARRATION = True        # If True, use AzureService or RecorderService
+INCLUDE_NARRATION = False      # Toggle to True/False for including voiceover
+FANCY_NARRATION = False        # If True, use AzureService or RecorderService
 NARRATOR_VOICE = "en-US-SteffanNeural"
 
 
@@ -821,277 +821,250 @@ class LPSPart3ManacherMirror(VoiceoverScene):
         #
         # (A) PART 3 TITLE
         #
-        title = Text("Part 3: Manacher’s Key Insight", font_size=36).to_edge(UP)
+        title = Text("Part 3: Manacher’s Genius", font_size=36).to_edge(UP)
         voiceover_or_play(
             self,
             Write(title),
             text=(
                 "Welcome to Part 3 of our Longest Palindromic Substring series. "
                 "Here, we'll delve into Manacher’s Algorithm step by step, "
-                "revealing how we achieve linear time with mirror indices."
+                "revealing how we achieve linear time by leveraging informatioin we have already seen."
             )
-        )
-        self.wait(3)
-
-        #
-        # (B) TRANSFORM THE STRING
-        #
-        transform_label = Text("Transforming 'aba' → '*a*b*a*'", font_size=28, color=BLUE).to_edge(LEFT)
-        voiceover_or_play(
-            self,
-            FadeIn(transform_label),
-            text=(
-                "First, we insert '*' between every character (and at the ends) to unify odd and even palindromes. "
-                "So 'aba' becomes '*a*b*a*'."
-            )
-        )
-        self.wait(3)
-
-        # Original vs transformed text
-        original_str = "aba"
-        transformed_str = "*a*b*a*"
-        ex_original = Text(f"Original: {original_str}", font_size=24).move_to(UP*0.5 + LEFT*3)
-        ex_trans = Text(f"Transformed: {transformed_str}", font_size=24, color=YELLOW).next_to(ex_original, DOWN, buff=0.3)
-
-        voiceover_or_play(
-            self,
-            [FadeIn(ex_original), FadeIn(ex_trans)],
-            text="Let’s lay it out visually as scrabble tiles."
-        )
-        self.wait(2)
-
-        # Scrabble tiles
-        tile_row = VGroup()
-        for i, ch in enumerate(transformed_str):
-            tile = create_tile(ch)
-            tile.move_to(RIGHT * i * 1.1)
-            tile_row.add(tile)
-        tile_row.shift(DOWN*1.5 + LEFT*(len(transformed_str)-1)*0.55)
-
-        voiceover_or_play(
-            self,
-            Create(tile_row),
-            text="Each character in the transformed string, including '*', has its own tile."
-        )
-        self.wait(3)
-
-        #
-        # (C) DEFINING p[i], CENTER, RIGHT
-        #
-        define_label = Text("Define p[i], center (C), right (R)", font_size=28, color=BLUE).to_edge(LEFT)
-        voiceover_or_play(
-            self,
-            FadeIn(define_label),
-            text=(
-                "We'll maintain an array p[i], storing the palindrome radius at each index i. "
-                "C and R track the rightmost palindrome we’ve found so far: "
-                "C is its center, and R is the boundary index."
-            )
-        )
-        self.wait(3)
-
-        # p bars
-        p_bars = VGroup()
-        for i in range(len(transformed_str)):
-            bar = Rectangle(
-                width=0.3, 
-                height=0.01, 
-                fill_color=GREEN, 
-                fill_opacity=1, 
-                stroke_width=1
-            )
-            bar.move_to(tile_row[i].get_center() + DOWN*1.5)
-            p_bars.add(bar)
-
-        voiceover_or_play(
-            self,
-            Create(p_bars),
-            text="Below each tile, these green bars represent p[i]. We'll adjust their height as expansions happen."
-        )
-        self.wait(3)
-
-        #
-        # (D) INDEX i=0
-        #
-        i0_marker = Arrow(UP, DOWN, color=YELLOW).move_to(tile_row[0].get_center() + UP*0.6)
-        voiceover_or_play(
-            self,
-            GrowArrow(i0_marker),
-            text=(
-                "At i=0 (the first '*'), there's nothing to expand around. p[0] remains 0. "
-                "Center C=0, Right R=0 for now."
-            )
-        )
-        self.wait(2)
-        self.play(FadeOut(i0_marker))
-
-        #
-        # (E) INDEX i=1 => 'a'
-        #
-        i1_marker = Arrow(UP, DOWN, color=YELLOW).move_to(tile_row[1].get_center() + UP*0.6)
-        voiceover_or_play(
-            self,
-            GrowArrow(i1_marker),
-            text=(
-                "Now at i=1 (the 'a'), we try to expand outwards. "
-                "Check T[0] = '*', T[2] = '*', they match!"
-            )
-        )
-        self.wait(2)
-
-        self.play(p_bars[1].animate.stretch_to_fit_height(0.6, about_edge=DOWN))  # p[1]=1
-        voiceover_or_play(
-            self,
-            None,
-            text="So p[1]=1. Next expansion step would check T[-1], T[3], out of range on left. We stop."
-        )
-        self.wait(2)
-
-        # Update C,R since i+p[i]=1+1=2 > R=0
-        c_marker = Arrow(DOWN, UP, color=RED).move_to(tile_row[1].get_center() + DOWN*1.0)
-        r_marker = Arrow(DOWN, UP, color=GREEN).move_to(tile_row[2].get_center() + DOWN*1.0)
-        voiceover_or_play(
-            self,
-            [GrowArrow(c_marker), GrowArrow(r_marker)],
-            text="We set center = 1, right = 2 now."
-        )
-        self.wait(2)
-        self.play(FadeOut(i1_marker))
-
-        #
-        # (F) INDEX i=2 => '*'
-        #
-        i2_marker = Arrow(UP, DOWN, color=YELLOW).move_to(tile_row[2].get_center() + UP*0.6)
-        voiceover_or_play(
-            self,
-            GrowArrow(i2_marker),
-            text=(
-                "At i=2 ('*'), i < R? (2<2?) It's equal, so no mirror logic. "
-                "Try expanding T[1] vs T[3] => 'a' vs 'b' mismatch => p[2]=0."
-            )
-        )
-        self.wait(2)
-        self.play(FadeOut(i2_marker))
-
-        #
-        # (G) INDEX i=3 => 'b'
-        #
-        i3_marker = Arrow(UP, DOWN, color=YELLOW).move_to(tile_row[3].get_center() + UP*0.6)
-        voiceover_or_play(
-            self,
-            GrowArrow(i3_marker),
-            text=(
-                "At i=3 ('b'), i=3 > R=2 => no mirror logic. "
-                "We expand: T[2]='*', T[4]='a', mismatch => p[3]=0. No update to C,R."
-            )
-        )
-        self.wait(2)
-        self.play(FadeOut(i3_marker), FadeOut(c_marker), FadeOut(r_marker))
-
-        #
-        # (H) Suppose we find a bigger palindrome at i=4 => '*'
-        #
-        i4_marker = Arrow(UP, DOWN, color=YELLOW).move_to(tile_row[4].get_center() + UP*0.6)
-        voiceover_or_play(
-            self,
-            GrowArrow(i4_marker),
-            text=(
-                "At i=4 ('*'), let's see if expansions succeed: T[3]='b', T[5]='b', match => p[4]=1. "
-                "Then T[2]='*', T[6]='*', match => p[4]=2. Then T[1]='a', T[7]? Out of range or mismatch, stop."
-            )
-        )
-        self.wait(2)
-        self.play(p_bars[4].animate.stretch_to_fit_height(1.2, about_edge=DOWN))  # p[4]=2
-        voiceover_or_play(
-            self,
-            None,
-            text="So p[4]=2. i+p[i] = 4+2=6, bigger than old R=2 => update C=4, R=6."
-        )
-        self.wait(2)
-
-        c_marker_2 = Arrow(DOWN, UP, color=RED).move_to(tile_row[4].get_center() + DOWN*1.0)
-        r_marker_2 = Arrow(DOWN, UP, color=GREEN).move_to(tile_row[6].get_center() + DOWN*1.0)
-        voiceover_or_play(
-            self,
-            [GrowArrow(c_marker_2), GrowArrow(r_marker_2)],
-            text="Center is 4, Right is 6."
-        )
-        self.wait(2)
-        self.play(FadeOut(i4_marker))
-
-        #
-        # (I) Mirror usage at i=5
-        #
-        i5_marker = Arrow(UP, DOWN, color=YELLOW).move_to(tile_row[5].get_center() + UP*0.6)
-        voiceover_or_play(
-            self,
-            GrowArrow(i5_marker),
-            text=(
-                "Now at i=5. Since i=5 < R=6, we find mirror = 2*C - i = 2*4 - 5=3. "
-                "We start p[5] = min( p[mirror], R - i )."
-            )
-        )
-        self.wait(2)
-
-        mirror_arrow = Arrow(UP, DOWN, color=BLUE).move_to(tile_row[3].get_center() + UP*1.2)
-        voiceover_or_play(
-            self,
-            GrowArrow(mirror_arrow),
-            text="The mirror is index 3. p[3]=0. R-i=6-5=1 => p[5] starts at min(0,1)=0."
-        )
-        self.wait(2)
-
-        # Attempt expansions
-        voiceover_or_play(
-            self,
-            None,
-            text="But we can still expand if T[4]= '*' and T[6]= '*' match => p[5]=1."
-        )
-        self.play(p_bars[5].animate.stretch_to_fit_height(0.6, about_edge=DOWN))
-        self.wait(2)
-
-        self.play(FadeOut(i5_marker), FadeOut(mirror_arrow))
-
-        #
-        # (J) Final Summation
-        #
-        summary_text = Text("We skip expansions using p[mirror]. That’s Manacher’s O(n) trick!", font_size=28, color=YELLOW).to_edge(UP)
-        voiceover_or_play(
-            self,
-            Write(summary_text),
-            text=(
-                "By leveraging p[mirror], we avoid re-checking inner characters over and over. "
-                "This single pass across the transformed string is O(n) in total."
-            )
-        )
-        self.wait(3)
-
-        # Final text
-        end_note = Text("Next: Coding Manacher’s in Part 4. Thanks for watching!", font_size=26, color=GREEN).to_edge(DOWN)
-        voiceover_or_play(
-            self,
-            FadeIn(end_note),
-            text=(
-                "In the next video, we’ll write the actual Python code for Manacher’s. See you there!"
-            )
-        )
-        self.wait(3)
-
-        # Fade everything out
-        self.play(
-            FadeOut(summary_text),
-            FadeOut(end_note),
-            FadeOut(tile_row),
-            FadeOut(p_bars),
-            FadeOut(transform_label),
-            FadeOut(define_label),
-            FadeOut(c_marker_2),
-            FadeOut(r_marker_2),
-            FadeOut(ex_original),
-            FadeOut(ex_trans),
-            FadeOut(title)
         )
         self.wait(1)
+
+        sample_str =  'aaaaaaaaaaa'
+
+        # Scrabble tiles
+        tiles = VGroup()
+        for i, ch in enumerate(sample_str):
+            tile = create_tile(ch, tile_width=0.9)
+            tile.move_to(RIGHT * i)
+            tiles.add(tile)
+        tiles.shift(DOWN*0.5 + LEFT*(len(sample_str)-1)*0.5)
+
+        # Create the counter text
+        counter = 0  # Initial value
+        counter_text = Text(f"Expansion Count: {counter}", font_size=45).next_to(tiles, DOWN * 2.5)
+        self.add(counter_text)  # Display the counter initially
+
+        voiceover_or_play(
+            self,
+            Write(tiles),
+            text="Let's start with a tricky string of letters aaaaaaaaaaa."
+        )
+        self.wait(1)
+        
+        
+
+        # shortRunTime = 0.15
+        # runTime = 0.25
+        # longRunTime = 0.65
+        # # We’ll demonstrate expansions for each letter-center:
+        # for center_index in range(len(sample_str)):
+        #     # 1) Highlight the center tile
+        #     center_rect = SurroundingRectangle(tiles[center_index], buff=0, color=GREEN)
+        #     self.play(Create(center_rect), run_time = shortRunTime)
+        #     arrow_left = Arrow(
+        #             start=tiles[center_index].get_top() + UP,
+        #             end=tiles[center_index].get_top(),
+        #             buff=0,
+        #             color=GREEN
+        #         )
+        #     arrow_right = Arrow(
+        #             start=tiles[center_index].get_top() + UP,
+        #             end=tiles[center_index].get_top(),
+        #             buff=0,
+        #             color=GREEN
+        #         )
+        #     self.play(GrowArrow(arrow_left), GrowArrow(arrow_right), run_time = shortRunTime)
+        #     left_idx = center_index
+        #     right_idx = center_index
+        #     notFirstFlag = False
+        #     while True:
+        #         if notFirstFlag:
+        #             counter += 1
+        #         notFirstFlag = True
+        #         new_counter_text = Text(f"Expansion Count: {counter}", font_size=45).next_to(tiles, DOWN * 2.5)
+        #         self.play(counter_text.animate.become(new_counter_text), run_time=shortRunTime)
+        #         if left_idx >= 0 and right_idx < len(sample_str) and sample_str[left_idx] == sample_str[right_idx]:
+        #             self.play(
+        #                 arrow_left.animate.shift(LEFT),
+        #                 arrow_right.animate.shift(RIGHT),
+        #                 run_time = runTime
+        #             )
+        #         else:
+        #             if left_idx < 0 or right_idx == len(sample_str):
+        #                 if left_idx < 0:
+        #                     self.play(arrow_left.animate.set_color(RED), run_time = runTime)
+        #                 if right_idx == len(sample_str):
+        #                     self.play(arrow_right.animate.set_color(RED), run_time = runTime)
+        #             elif sample_str[left_idx] != sample_str[right_idx]:
+        #                 self.play(arrow_left.animate.set_color(RED), arrow_right.animate.set_color(RED), duration = longRunTime)
+        #             # Fade out these red arrows
+        #             self.play(FadeOut(arrow_left), FadeOut(arrow_right), run_time = longRunTime)
+        #             break
+        #         # Move one step outward
+        #         left_idx -= 1
+        #         right_idx += 1
+
+        #     # Cleanup the center rectangle after we finish expanding this center
+        #     self.play(FadeOut(center_rect), run_time = shortRunTime)
+
+        self.play(FadeOut(counter_text))
+
+        # 2) Define "fourth letter" (1-based) → index 3 in 0-based
+        center_index = 3   # 'b' at index 3 in "abcbac" (which is the 4th letter)
+
+        # 3) "Third expansion" means radius=2
+        expansion_radius = 3
+        left_start  = center_index - expansion_radius  # 3 - 2 = 1
+        right_end   = center_index + expansion_radius  # 3 + 2 = 5
+
+        # Safety check to avoid going out of range
+        if left_start < 0 or right_end >= len(sample_str):
+            print("String too short for a 3rd expansion at index 3!")
+            return
+
+        # 4) Highlight the center tile just for clarity
+        center_rect = SurroundingRectangle(tiles[center_index], color=GREEN, buff=0)
+        self.play(Create(center_rect))
+        self.wait(0.5)
+        
+        # 5) Create curly braces under the “left half” and “right half” of this expansion
+        left_half  = tiles[left_start : center_index]    # indices [1..2]
+        right_half = tiles[center_index+1 : right_end+1] # indices [4..5]
+
+        # Create the braces
+        brace_left  = Brace(left_half, direction=UP, buff=0.2)
+        brace_right = Brace(right_half, direction=UP, buff=0.2)
+
+        # Optionally add labels under each brace
+        label_left = brace_left.get_text("Left Half")
+        label_right = brace_right.get_text("Right Half")
+
+        # Animate them in sequentially
+        self.play(Write(brace_left), run_time=2)
+        self.play(FadeIn(label_left), run_time=2)
+        self.play(Write(brace_right), run_time=2)
+        self.play(FadeIn(label_right), run_time=2)
+        self.wait(1)
+
+        
+
+
+
+        # shortRunTime = 0.15
+        # runTime = 0.25
+        # longRunTime = 0.65
+        # # Create the counter text
+        # counter = 0  # Initial value
+        # new_counter_text = Text(f"Expansion Count: {counter}", font_size=45).next_to(tiles, DOWN * 2.5)
+        # self.play(counter_text.animate.become(new_counter_text), run_time=shortRunTime)
+        # self.add(counter_text)  # Display the counter initially
+        # n = len(sample_str)
+        # # We'll keep track of the "center" (C) and the "right boundary" (R)
+        # C = 0
+        # R = 0
+        # p = [0]*n
+        # # We'll animate expansions for each center i in the transformed string
+        # line_height = 1.2  # Slightly larger than tile height
+        # right_bound_line = Line(
+        #     tiles[0].get_center() + UP*(line_height/2) + LEFT * 0.5,
+        #     tiles[0].get_center() + DOWN*(line_height/2) + LEFT * 0.5,
+        #     color=RED,
+        #     stroke_width=6
+        # )
+        # self.add(right_bound_line)
+        # for i in range(n):
+        #     # ------------------------------------------------------------------
+        #     # 1) Mirror logic: mirror = 2*C - i
+        #     #    If i < R, we know part of palindrome from mirror's expansions
+        #     # ------------------------------------------------------------------
+        #     mirror = 2*C - i
+        #     if i < R:
+        #         # We'll "pretend" to skip expansions by setting p[i] = min(...)
+        #         # but only do partial expansions if needed.
+        #         p[i] = min(R - i, p[mirror])
+        #     # ------------------------------------------------------------------
+        #     # 2) Actual expansions around i: expand if chars match
+        #     # ------------------------------------------------------------------
+        #     # We'll show expansions visually using arrows around the "center" tile
+        #     center_rect = SurroundingRectangle(tiles[i], buff=0, color=GREEN)
+        #     self.play(Create(center_rect), run_time=0.3)
+        #     arrow_left = Arrow(
+        #             start=tiles[i - p[i]].get_top() + UP,
+        #             end=tiles[i - p[i]].get_top(),
+        #             buff=0,
+        #             color=GREEN
+        #         )
+        #     arrow_right = Arrow(
+        #             start=tiles[i + p[i]].get_top() + UP,
+        #             end=tiles[i + p[i]].get_top(),
+        #             buff=0,
+        #             color=GREEN
+        #         )
+        #     self.play(GrowArrow(arrow_left), GrowArrow(arrow_right), run_time=0.4)
+
+        #     # Try expanding further
+        #     while (i - p[i] - 1 >= 0 and i + p[i] + 1 < n 
+        #            and sample_str[i - p[i] - 1] == sample_str[i + p[i] + 1]):
+        #         counter += 1
+        #         new_counter_text = Text(f"Expansion Count: {counter}", font_size=45).next_to(tiles, DOWN * 2.5)
+        #         self.play(counter_text.animate.become(new_counter_text), run_time=shortRunTime)
+        #         p[i] += 1
+        #         # Animate arrows moving left/right
+        #         self.play(
+        #             arrow_left.animate.shift(LEFT),
+        #             arrow_right.animate.shift(RIGHT),
+        #             run_time=0.3
+        #         )
+
+        #     # ------------------------------------------------------------------
+        #     # 3) Update center (C) and right boundary (R) if we expanded beyond R
+        #     # ------------------------------------------------------------------
+        #     if i + p[i] > R:
+        #         C = i
+        #         R = i + p[i]
+        #         new_pos = tiles[R].get_center() + RIGHT * 0.5 if R < n else tiles[n-1].get_center() + RIGHT * 0.5
+        #         self.play(
+        #             right_bound_line.animate.move_to(
+        #                 [new_pos[0], right_bound_line.get_center()[1], 0]
+        #             ),
+        #             run_time=0.4
+        #         )
+
+        #     # Fade out the center rect and arrows
+        #     self.play(
+        #         FadeOut(center_rect),
+        #         FadeOut(arrow_left),
+        #         FadeOut(arrow_right),
+        #         run_time=runTime
+        #     )
+
+        # # Finally, we highlight the maximum palindrome found
+        # # (In a real Manacher’s, we use max in p[] to find it. Here, we show just a message.)
+        # max_len = max(p)  # the radius in the transformed string
+        # max_center = p.index(max_len)
+
+        # # Convert center, radius → original indices if you want
+        # # (Skipping the full math for brevity: it’s basically (center - radius)//2 in the raw string.)
+        # highlight_start = max_center - max_len
+        # highlight_end = max_center + max_len
+        # # We'll highlight those tiles
+        # highlight_rect = SurroundingRectangle(
+        #     VGroup(*tiles[highlight_start:highlight_end+1]),
+        #     buff=0.1,
+        #     color=GREEN
+        # )
+        # highlight_label = Text("Longest Palindrome Found", font_size=24, color=GREEN)
+        # highlight_label.next_to(highlight_rect, DOWN)
+
+        # self.play(Create(highlight_rect), FadeIn(highlight_label), run_time=longRunTime)
+        # self.wait(2)
+
+        # self.play(FadeOut(tiles), FadeOut(title), run_time = runT)
+        # self.wait()
 
 
 # ---------------------------------- #
